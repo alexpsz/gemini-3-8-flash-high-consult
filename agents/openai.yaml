@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gemini 3.8 Flash High Consult"
+  short_description: "Independent native Gemini review with verified delivery"
+  default_prompt: "Use $gemini-3-8-flash-high-consult to independently review the specified artifact in its owning project and preserve the complete original report."
