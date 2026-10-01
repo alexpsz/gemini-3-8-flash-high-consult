@@ -1,6 +1,8 @@
 """Shared-directory delivery tests, independent of live model capability."""
 import hashlib
+import io
 import json
+from contextlib import redirect_stdout
 from pathlib import Path
 import sys
 import tempfile
@@ -55,6 +57,44 @@ class NamedDeliveryTests(unittest.TestCase):
         self.assertNotIn('other.opus.report.md', [call.args[0].name for call in reads.call_args_list])
         receipt = json.loads(self.receipt.read_bytes())
         self.assertEqual(receipt['files']['r1.gemini.report.md']['sha256'], hashlib.sha256(self.report).hexdigest())
+
+    def test_known_unsent_and_unknown_preserve_state_without_collecting(self):
+        for state, code in (('NOT_SENT', 'NOT_SENT'), ('UNKNOWN', 'DISPATCH_UNKNOWN')):
+            with self.subTest(state=state):
+                self.write(self.session_path, {**self.session, 'dispatch_state': state})
+                before = self.session_path.read_bytes()
+                with mock.patch.object(c, 'read_named', wraps=c.read_named) as reads:
+                    with self.assertRaises(c.DeliveryError) as caught:
+                        self.collect()
+                self.assertEqual(caught.exception.code, code)
+                self.assertEqual(caught.exception.dispatch_state, state)
+                reads.assert_not_called()
+                self.assertEqual(self.session_path.read_bytes(), before)
+                self.assertFalse(self.receipt.exists())
+        self.write(self.session_path, self.session)
+        self.assertEqual(self.collect()['status'], 'PASS')
+
+    def test_cli_distinguishes_unsent_unknown_and_invalid_dispatch_states(self):
+        cases = [('NOT_SENT', 'NOT_SENT'), ('UNKNOWN', 'DISPATCH_UNKNOWN')]
+        invalid_states = [None, True, 1, [], {}, '', 'sent', 'UNKNOWN ', 'CONFIDENTIAL_INVALID_STATE']
+        cases.extend((state, 'INVALID_SESSION_SCHEMA') for state in invalid_states)
+        for state, code in cases:
+            with self.subTest(state=state):
+                self.write(self.session_path, {**self.session, 'dispatch_state': state})
+                before = self.session_path.read_bytes()
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    exit_code = c.main(['--session', str(self.session_path),
+                                        '--receipt-file', str(self.receipt), '--stable-seconds', '0'])
+                result = json.loads(output.getvalue())
+                expected = {'status': 'FAIL', 'code': code, 'scope': 'protocol_only'}
+                if code in ('NOT_SENT', 'DISPATCH_UNKNOWN'):
+                    expected['dispatch_state'] = state
+                self.assertEqual(exit_code, 2)
+                self.assertEqual(result, expected)
+                self.assertNotIn('CONFIDENTIAL', output.getvalue())
+                self.assertEqual(self.session_path.read_bytes(), before)
+                self.assertFalse(self.receipt.exists())
 
     def test_identical_retry_does_not_rewrite_receipt(self):
         self.collect()

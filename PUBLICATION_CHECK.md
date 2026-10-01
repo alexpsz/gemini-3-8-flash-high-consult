@@ -1,5 +1,11 @@
 # Publication check
 
+## v0.1.1 dispatch-state correction
+
+The collector previously classified every non-SENT value as `NOT_SENT`, which could make an uncertain send look definitely unsent. It now returns `DISPATCH_UNKNOWN` with the original `dispatch_state: UNKNOWN`, keeps the existing `NOT_SENT` code for a known unsent request, and rejects non-string or unrecognized states with `INVALID_SESSION_SCHEMA`. No automatic dispatch, resend, session rewrite or broader collection access was added. Existing path, identity, sentinel, stable-byte and receipt checks remain in force.
+
+The regression tests exercise known unsent, unknown, sent and invalid states, including CLI output, unchanged session bytes, absent receipts and no output reads before the state gate. On Windows with Python 3.12.14, `python -m unittest discover -s tests -v` passed all 63 tests for this patch. This validates the local collector behavior only; it does not establish a new live macOS consultation or native UI result. No consultation was sent as part of this correction.
+
 Scope: standalone public skill package. No live consultation was sent during this packaging review. The installed source skill was not edited. No personal project artifacts, conversation exports, account credentials, native runtime or application binaries are included.
 
 ## Changes made for this release

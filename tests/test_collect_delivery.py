@@ -123,7 +123,8 @@ class DeliveryTests(unittest.TestCase):
         self.failure("DUPLICATE_JSON_KEY")
 
     def test_dispatch_generation_and_approval_gates(self):
-        for field, value, code in (("dispatch_state", "UNKNOWN", "NOT_SENT"),
+        for field, value, code in (("dispatch_state", "NOT_SENT", "NOT_SENT"),
+                                   ("dispatch_state", "UNKNOWN", "DISPATCH_UNKNOWN"),
                                    ("generation_stopped", False, "GENERATION_NOT_STOPPED"),
                                    ("unresolved_approval", True, "UNRESOLVED_APPROVAL")):
             with self.subTest(field=field):

@@ -38,6 +38,8 @@ Keep this controller session outside the adviser's allowlist. Paths below are il
 
 The controller sets `generation_stopped` and `unresolved_approval` from current UI observations, never from the existence of completion JSON. Persist `NOT_SENT -> UNKNOWN` before Send, and `SENT` after visible submission. UNKNOWN and SENT requests must be recovered, not resent.
 
+The collector distinguishes dispatch states explicitly. Known `NOT_SENT` returns `FAIL` with code `NOT_SENT` and `dispatch_state: NOT_SENT`. `UNKNOWN` returns `FAIL` with code `DISPATCH_UNKNOWN` and `dispatch_state: UNKNOWN`; recover the original conversation and never interpret this as permission to resend. Non-string or unrecognized values fail with `INVALID_SESSION_SCHEMA` without echoing that untrusted value. Only `SENT` can continue to delivery validation. These checks do not modify the session or perform any send action.
+
 After observing generation stop, run the offline collector with absolute paths:
 
 ```sh
