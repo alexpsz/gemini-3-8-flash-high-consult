@@ -12,3 +12,15 @@ output/
 *.receipt.json
 *.completion.json
 *.report.md
+private/
+local-runs/
+*.packet.md
+*.manifest.json
+*.findings.json
+runtime.json
+*.raw
+*.jsonl
+*.ndjson
+run.json
+stdin.jsonl
+native.log

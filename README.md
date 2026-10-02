@@ -1,26 +1,20 @@
 # Gemini 3.8 Flash High Consult
 
-A standalone Agent Skill for independent reviews in Antigravity desktop. It verifies the selected model, limits evidence to named files, submits once, and preserves the complete original answer in the owning project. It does not include an account, API key, native automation runtime or personal consultation history.
+Independent Antigravity reviews through the official CLI, with bounded evidence, single submission and preserved original delivery. Requires signed-in `agy`, access to Gemini 3.8 Flash High and Python 3.10+. Normal harness customization remains enabled; native desktop is an explicit fallback.
 
-## Install
+Relevant public search and webpage reading are default consultation capabilities, subject to explicit offline instructions and existing policy. [CLI workflow](references/cli-workflow.md) describes the user-authorized `read_url(*)` profile setup without blanket approval or removing tools. Installing on another machine does not itself authorize global configuration changes. Actual network success must be established from each run's native tool evidence; earlier file-reading probes did not test this configuration.
 
-Copy this repository directory as `gemini-3-8-flash-high-consult` into your agent's configured skills directory. For a Codex installation using the conventional default, that is `~/.codex/skills/` on macOS or `$HOME\.codex\skills\` in Windows PowerShell. Respect an existing skill rather than overwriting it blindly. If your installed client uses another discovery location, use its current documented location.
+Install this folder as `gemini-3-8-flash-high-consult` in the configured skills directory, preserving an existing installation. Invoke: `Use $gemini-3-8-flash-high-consult to review this artifact in its owning project.` Start with [SKILL.md](SKILL.md); read supporting references when their phase applies.
 
-Invoke: `Use $gemini-3-8-flash-high-consult to review this artifact in its owning project.`
+Use [CLI workflow](references/cli-workflow.md) for new requests and retain each run's actual validation evidence. Mac manual-assisted native submission and delivery have been observed; automatic desktop selection/input/send remain unverified. CLI completion does not prove effective effort when native metadata omits it.
 
-Antigravity must be installed, signed in and expose the requested model in its actual picker. A supported native computer-use capability is also required. This skill discovers and follows that capability's current documentation. It does not claim a Windows runtime works on macOS. Native macOS interaction remains unverified; the offline protocol is portable Python. Antigravity's [official setup documentation](https://www.antigravity.google/docs) describes current application platform support, which is separate from automation support and model availability.
-
-## Local validation
-
-Python 3.10+ is enough; there are no third-party script dependencies.
+Run local checks in a writable copy; they contact no model:
 
 ```sh
 python3 -m unittest discover -s tests -v
 python3 scripts/check_packet_safety.py SKILL.md README.md references/context-packet-template.md
 ```
 
-On Windows substitute your available Python command. Tests use temporary synthetic data and do not contact a model. See [publication checks](PUBLICATION_CHECK.md) for tested scope and limitations. See [SKILL.md](SKILL.md) for the operating workflow and linked protocol references.
+No provider SDK or automation runtime is bundled. This community package uses the MIT license and is not an official Google or OpenAI product.
 
-The structure follows the [Agent Skills specification](https://agentskills.io/specification); `agents/openai.yaml` is optional Codex UI metadata. This is an independent community package, not an official Google or OpenAI product. Model access and interface labels may change; the workflow stops accurately when the requested target cannot be verified.
-
-MIT license. No upstream license or attribution notice existed in the local source package inspected for this release; the release adds the repository's MIT grant. All examples and tests are synthetic. No provider SDK, application binary or third-party manual is bundled.
+For native Windows installation, profile creation and a first live test, follow [Windows CLI setup](references/windows-setup.md). Fixed runtime profiles are generated locally and must not be committed. On Windows use `py -3` in place of `python3` in the offline commands above.

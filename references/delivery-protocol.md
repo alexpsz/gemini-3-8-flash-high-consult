@@ -1,8 +1,14 @@
-# Shared-project delivery contract
+# Delivery and controller state
 
-New requests use schema version 2. Preserve old reports and use unique request/adviser basenames in the existing review directory. Only the exact named outputs are writable; directory membership does not grant access to neighboring reports.
+## CLI delivery
 
-Write the full report first, ending with the exact unique sentinel, then completion JSON last. The report includes the request ID, findings, evidence actually read, counterevidence and uncertainty. Do not silently revise it after completion.
+The [CLI helper](cli-workflow.md) captures the provider's original stream and answer, then writes controller receipt `run.json`. Preserve that run directory unchanged before synthesis or follow-up. Check `dispatch_state`, `delivery_status` and `target_verification` separately; complete text is not proof of effective effort, input access or factual correctness. Report `CONFIGURED` as configured, not verified. Retain partial/error output and its access limitations.
+
+The helper's receipt is not an adviser-authored completion object. Do not manufacture `*.completion.json`, claim the native collector passed, or run `collect_delivery.py` on CLI output. Native session files and their current/history schema below remain for the native route only; do not merge them with CLI `run.json` or reset a native `UNKNOWN`/`SENT` to launch CLI.
+
+## Native file delivery
+
+Use unique request/adviser basenames; only named outputs are writable. Report first, completion last; no silent revision afterwards.
 
 ```json
 {
@@ -16,7 +22,7 @@ Write the full report first, ending with the exact unique sentinel, then complet
 }
 ```
 
-Keep this controller session outside the adviser's allowlist. Paths below are illustrative, not defaults; resolve an existing canonical local directory for the current host.
+Keep controller state outside the adviser's allowlist. Collector fields:
 
 ```json
 {
@@ -30,30 +36,39 @@ Keep this controller session outside the adviser's allowlist. Paths below are il
   "findings_file": null,
   "findings_required": false,
   "sentinel": "GEMINI38_FLASH_HIGH_RESULT_EXAMPLE_001",
-  "dispatch_state": "SENT",
-  "generation_stopped": true,
-  "unresolved_approval": false
+  "dispatch_state": "NOT_SENT",
+  "generation_stopped": false,
+  "unresolved_approval": true
 }
 ```
 
-The controller sets `generation_stopped` and `unresolved_approval` from current UI observations, never from the existence of completion JSON. Persist `NOT_SENT -> UNKNOWN` before Send, and `SENT` after visible submission. UNKNOWN and SENT requests must be recovered, not resent.
+## Native current state, historical evidence
 
-The collector distinguishes dispatch states explicitly. Known `NOT_SENT` returns `FAIL` with code `NOT_SENT` and `dispatch_state: NOT_SENT`. `UNKNOWN` returns `FAIL` with code `DISPATCH_UNKNOWN` and `dispatch_state: UNKNOWN`; recover the original conversation and never interpret this as permission to resend. Non-string or unrecognized values fail with `INVALID_SESSION_SCHEMA` without echoing that untrusted value. Only `SENT` can continue to delivery validation. These checks do not modify the session or perform any send action.
+One writer maintains `controller_state.current` using `scripts/consult_state.py`; replacement moves superseded state into history (latest 25). Inspect multiple sessions together without reading reports:
 
-After observing generation stop, run the offline collector with absolute paths:
+```sh
+python3 scripts/consult_state.py inspect --session /absolute/project/docs/reviews/example-review-001.gemini.session.json
+python3 scripts/consult_state.py update --session /absolute/project/docs/reviews/example-review-001.gemini.session.json --event-file /absolute/controller-event.json
+```
+
+An update event contains `expected_sha256` from inspect's `sha256`, unique `event_id`, timezone-aware `observed_at` and complete replacement `current`. Initial legacy conversion requires `migrate_legacy: true`; never shallow-merge old blockers. `current` requires `phase`, `dispatch_state`, `generation_stopped`, `unresolved_approval`, `input_access_verified`, `input_access_status`. Optional fields are `blocker`, `next_check_at`, `recovery_count`, `conversation_locator`, `submission_observed`, `controller_send_attempted`, `ui_evidence_conflict`, `evidence`. Phases use lowercase snake_case; `manual_handoff` requires UNKNOWN and `controller_send_attempted: false`; SENT requires observed submission and a conversation locator.
+
+Input status is `unknown|partial|verified|unavailable`; its verified flag is boolean, true only for `verified`. Each `evidence` item requires matching `adviser`, absolute session path in `session`, timezone-aware `observed_at` and `source`. Add input path, observation kind, context/revision, selected model/effort, wrapper fidelity and approval scope there. Separate UI-root binding, file corroboration, controller approvals and adviser-tool approvals; unresolved/unknown approvals keep the aggregate flag true. Counts do not prove specific files read. Keep cross-adviser scheduling/summary outside these evidence lists. File-update time is not observation time.
+
+`NOT_SENT -> UNKNOWN` precedes controller send or manual handoff; `SENT` requires observed submission. Never reset UNKNOWN/SENT to retry. Completion requires stopped generation, no unresolved approval, original complete answer and final nonempty sentinel. Resolve conflicting UI evidence as described in [native workflow](native-workflow.md); completion JSON alone cannot establish UI state.
+
+## Collect and preserve native delivery
+
+After current completion observations, use Python 3.10+ and canonical absolute paths:
 
 ```sh
 python3 scripts/collect_delivery.py --session /absolute/project/docs/reviews/example-review-001.gemini.session.json --receipt-file /absolute/project/docs/reviews/example-review-001.gemini.receipt.json --stable-seconds 1
 ```
 
-On Windows use an available Python executable and equivalent resolved paths; do not assume `python3` exists. Python 3.10 or newer and the standard library suffice. This script does not contact or control the model.
+Use the available Python command on Windows. Schema 2 verifies identity, strict JSON, named outputs, sentinel and stable bytes. It preserves original bytes in sibling `<receipt-file>.archive`, writing `.archive-receipt.json` last; optional `--archive-dir` selects another absolute directory. Keep archives outside the adviser allowlist. Identical retries recover; changed files and partial/conflicting archives fail without overwrite. Canonicalize paths before session creation: symlinks/reparse points, hardlinks, traversal and macOS `/var` aliases may be refused.
 
-The collector checks identity, strict JSON, exact allowed output basenames, final sentinel and stable bytes, then creates an integrity receipt. Only this request's outputs are read. Identical receipt retries do not rewrite anything; changed reports and conflicting/partial receipts fail. Symlinks, reparse points, hardlinks, traversal, Windows alternate streams and device names are refused. Use canonical directories: a macOS `/var` alias or other symlink ancestor may intentionally fail these checks; resolve and verify the real intended root before creating the session, rather than weakening checks.
+`NOT_SENT` and `DISPATCH_UNKNOWN` failures describe dispatch state, never permission to resend. Protocol PASS does not verify inputs read, model identity, UI state or factual claims. Do not rewrite reports, weaken checks or broaden access for PASS. Preserve original bytes before an informed follow-up.
 
-The collector does not verify the manifest's input files, model selection, generation state, evidence access or report truth. Those remain separate controller observations. A protocol PASS never implies a factual PASS. Never rewrite adviser reports, overwrite receipts or broaden access to force acceptance.
+If native files fail, collect the complete original turn through supported UI/export. One recovery may expand a truncated turn; otherwise retain an incomplete result. Never ask for reconstruction or use another AI composer as clipboard.
 
-For unavailable native file tools, preserve the same request and use supported native export/UI text to collect the complete original answer. Do not resend or ask for a model-authored reconstruction. One same-turn recovery is allowed for truncation; otherwise mark incomplete and retain the blocker. Avoid AI composers as clipboard intermediaries.
-
-Optional findings, when declared before dispatch, use version 2 and matching identity fields plus `recommendation`, `findings`, `evidence_read`, `unknowns`. Each finding has `id`, `severity` (`info|low|medium|high|critical`), `claim`, `file` (string or null), `line` (positive integer or null), `trigger`, `evidence_kind`, `counterevidence`, `suggested_check`. No findings file is needed for a prose review.
-
-The bundled collector retains version 1 recovery for existing sessions via `--snapshot-dir` and old fixed basenames. Use that route only for a real legacy request; do not migrate identities or resend an interrupted consultation.
+Optional predeclared findings use matching version/identity plus `recommendation`, `findings`, `evidence_read`, `unknowns`. Each finding has `id`, `severity` (`info|low|medium|high|critical`), `claim`, `file`, `line`, `trigger`, `evidence_kind`, `counterevidence`, `suggested_check`; file/line may be null. Version 1 `--snapshot-dir` is only for genuine legacy sessions, without identity migration or resending.

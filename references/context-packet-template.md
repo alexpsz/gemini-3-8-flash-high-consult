@@ -1,41 +1,49 @@
-# Shared evidence and dispatch
+# Evidence and dispatch
 
-Use one task packet in the project's existing review location. Include the question, audience, goals, constraints, artifact, facts, contrary evidence, known attempts, unknowns, exact permitted inputs and exact writable outputs. Allow a no-change recommendation. Keep controller rankings and other advisers' reports outside the allowlist.
+Reuse one neutral packet in the owning project's existing review location, normally `docs/reviews`. Include the question, goals, constraints, actual artifacts, counterevidence, unknowns and exact local read/write allowlists. Relevant public web research is additionally permitted by default; record any explicit offline or narrower source restriction. Exclude previous verdicts and neighboring reports; permit no-change conclusions. Record harness/project-memory exposure as observed or unknown. A new conversation does not establish isolation.
 
-Create a manifest that lists each exact input's project-relative path, byte length and SHA-256, plus the packet entry. Resolve any separately authorized external input explicitly; do not broaden a folder allowlist. Compute `input_manifest_sha256` from the **manifest's exact UTF-8 bytes**, and separately record `packet_sha256` from the packet. Recheck file hashes before dispatch. A manifest hash identifies the intended evidence; it does not prove the model read the evidence. Preserve a stable manifest and inputs for the duration of the review, or start a new identified review for changed inputs.
+Manifest entries contain exact project-relative path, byte length and SHA-256; explicitly resolve authorized external inputs. Hash manifest UTF-8 bytes separately from packet bytes. Check inputs once before dispatch and again only if they may have changed. Keep them stable through review; changed evidence after submission requires a separately identified review. Use authoritative source bytes. For external inputs without an existing native read grant, stage exact authorized copies under the owning project review directory and retain original source paths and hashes; do not recapture unchanged generated evidence. Unsaved buffers are separate evidence.
 
-Scan and inspect the exact outgoing texts with `scripts/check_packet_safety.py`. Verify essential reads using content-specific references. Record unsaved editor buffers separately from disk inputs.
+Run `scripts/check_packet_safety.py` on exact outgoing texts and inspect them. The scanner is heuristic. Remove secrets only from outgoing copies; omit unrelated private history, raw media and credentials.
 
-## Short resolved wrapper
-
-Replace bracketed fields before sending. If native-file root binding is needed, add the marker's exact path and nonce-check instruction; never include the expected nonce in the wrapper. Require a mismatch or unreadable marker to halt substantive work in the same conversation.
+Resolve every bracketed field. For CLI, prefer bounded evidence directly in the prompt when sufficient; include paths/hashes and label inline excerpts. For that route, replace the file-reading block below with the actual inline evidence and remove unused packet/manifest paths; make no tool-read claim. Otherwise use the file-access block. Keep the packet marker out of the wrapper so a later echo can corroborate an actual read. One marker never proves every input was read.
 
 ```text
-CONSULT_DISPATCH_V3
+CONSULT_DISPATCH_V4
 REQUEST_ID: [unique request ID]
 ADVISER: gemini
-ROOT: [controller-verified canonical absolute root]
+ROOT: [approved canonical absolute root]
 PACKET: [absolute packet path]
-PACKET_SHA256: [exact packet SHA-256]
+PACKET_SHA256: [packet hash]
 INPUT_MANIFEST: [absolute manifest path]
-INPUT_MANIFEST_SHA256: [exact manifest SHA-256]
-Read the packet and only the exact manifest-listed inputs. Give an independent
-first assessment. Do not read controller notes or other advisers' reports.
-Product inputs are read-only. Use native file tools; no terminal execution,
-installs, security changes, commits, publication or unrelated reads.
-DELIVERY: files; schema_version 2
-REPORT: [absolute request.gemini.report.md]
-COMPLETION: [absolute request.gemini.completion.json]
-FINDINGS: none
-Write the complete first answer into REPORT, including REQUEST_ID, evidence
-actually read, counterevidence, unknowns and access gaps. End with the exact
-sentinel below. Write COMPLETION last using the specified schema and exact
-report basename, then post a short notice. If native file delivery fails,
-give the complete answer in this same chat; do not widen scope or resend.
+INPUT_MANIFEST_SHA256: [manifest hash]
+For file-based evidence, first read only PACKET with the available file tool. If unreadable or its binding
+marker is missing, stop. Echo its marker and one content fact, then continue;
+the controller will corroborate these later, not approve a preliminary gate.
+Read the manifest and only its exact local inputs. Give an independent first
+assessment. Do not read controller notes or other advisers' reports.
+Product files are read-only. No terminal commands, installs, security changes,
+commits, publication or unrelated access.
+Relevant public web search and page reading are permitted by default. Use
+search_web and read_url_content when useful without asking for a separate
+instruction. Honor explicit offline or narrower source limits in this request.
+If your web tool saves its response to a local file, reading that exact response
+file under this conversation's .system_generated/steps directory with view_file
+is part of authorized web research, in addition to the manifest's local inputs.
+Do not traverse other conversations. Read the actual saved content before citing
+it; a wrapper title such as Live Content is not the webpage's actual title.
+Cite sources actually accessed and distinguish them from packet evidence.
+Keep private inputs out of unnecessary search queries. Do not submit forms,
+post or interact with accounts. Report denied tools and missing evidence;
+do not repeat the same rejected action or claim a denied source was read.
+DELIVERY: complete final response; controller captures stdout
+Return the complete first answer, request ID, evidence actually read,
+counterevidence, uncertainty and access gaps. Do not create report or completion
+files. End with the exact sentinel as the last line of plain text, without quotes, code fences or Markdown formatting. The controller preserves your full answer.
 FINAL_SENTINEL: [unique GEMINI38_FLASH_HIGH_RESULT_... value]
 END_DISPATCH: [same request ID]
 ```
 
-Supply the small completion JSON schema from the delivery reference if needed. Only authorize exact `.tmp` paths if the application supports atomic file writing and it materially helps. Do not request terminal commands to obtain atomicity.
+For native fallback only, replace DELIVERY with `files; schema_version 2`, name exact REPORT/COMPLETION paths, and supply the schema from [delivery](delivery-protocol.md). Require report first, completion last, and full in-conversation output if file delivery fails. Authorize exact temporary paths only for supported native atomic writes, never terminal commands. Use [native workflow](native-workflow.md) for project/file corroboration. Preserve the first answer before informed follow-up; follow-ups have distinct IDs and do not count as independent reviews.
 
-The controller's session additionally stores requested/observed model and effort, root/revision, UI versus native-file binding evidence, conversation locator, context exposure, wrapper hash, transport and collection status. This record is not evidence for the reviewer. A later informed follow-up has its own ID and sentinel and does not count as an independent review.
+The runner validates a file-based `INPUT_MANIFEST` automatically before launch. Its JSON object uses `root` and `inputs`; each input has `project_relative_path` or `absolute_path`, `bytes`, `sha256`, and optional `role`/source provenance. See [runtime checks](runtime-recovery.md) before dispatching external screenshots.
