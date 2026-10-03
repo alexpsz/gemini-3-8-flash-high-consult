@@ -1,4 +1,4 @@
 interface:
   display_name: "Gemini 3.8 Flash High Consult"
-  short_description: "Independent Gemini review through official CLI"
-  default_prompt: "Use $gemini-3-8-flash-high-consult to independently review this artifact through the official Antigravity CLI, preserve its full answer, and report model verification limits."
+  short_description: "Independent Gemini review through browser or CLI"
+  default_prompt: "Use $gemini-3-8-flash-high-consult to independently review this artifact through the connected official Antigravity browser client for interactive work or CLI for automation, preserve its full answer and activity evidence, and report model verification limits."

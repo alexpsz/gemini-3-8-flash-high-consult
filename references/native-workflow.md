@@ -1,6 +1,6 @@
 # Native operation and recovery
 
-Read only for an existing native request or explicitly chosen native route. New consultations use [CLI](cli-workflow.md). Fallback is possible after established `NOT_SENT`; never switch an uncertain or submitted request to CLI/native and resend. Mac manual-assisted delivery has been observed; automatic model selection/input/send remain unverified.
+Read only for an existing native request or explicitly chosen native route. New interactive browser consultations use [browser workflow](browser-workflow.md); CLI execution uses [CLI](cli-workflow.md). Fallback is possible after established `NOT_SENT`; never switch an uncertain or submitted request to CLI/native and resend. Mac manual-assisted delivery has been observed; automatic model selection/input/send remain unverified.
 
 ## Reuse observations
 
